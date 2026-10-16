@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>مكتبة الأصوات وتوليد الكلام</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg-color: #14110f;
+      --card-bg: #211c19;
+      --accent-gold: #d4af37;
+      --green-btn: #38d39f;
+      --text-color: #f1ebd9;
+      --text-muted: #a09585;
+      --border-color: #342c26;
+    }
+    body {
+      font-family: 'Courier New', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .top-bar {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+      font-weight: bold;
+      color: var(--accent-gold);
+      margin-bottom: 12px;
+      font-size: 15px;
+    }
+    .main-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .search-input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      background: #14110f;
+      color: #fff;
+      font-size: 14px;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .voices-list {
+      max-height: 380px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .voice-item {
+      background: #1a1613;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .voice-name {
+      font-weight: bold;
+      color: var(--text-color);
+    }
+    .btn-select {
+      background: var(--accent-gold);
+      color: #000;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    /* المشغل السفلي المماثل للصورة */
+    .player-bar {
+      margin-top: 12px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .control-btn {
+      flex: 1;
+      background: #2a231f;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .control-btn.play {
+      background: var(--green-btn);
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    ⚙️ اختيار وتحكم الصوت المباشر
+  </div>
+
+  <div class="main-card">
+    <input type="text" id="search" class="search-input" placeholder="🔎 ابحث عن اسم الصوت..." oninput="filterVoices()">
+    <div id="loading" style="text-align:center; padding: 20px; color: var(--text-muted);">⏳ جاري جلب الأصوات من ElevenLabs...</div>
+    <div id="voicesContainer" class="voices-list"></div>
+  </div>
+
+  <!-- أزرار المشغل السفلي مثل الواجهة المرفقة -->
+  <div class="player-bar">
+    <button class="control-btn" onclick="prevVoice()">❮ السابق</button>
+    <button class="control-btn play" onclick="playCurrentPreview()">▶ تشغيل</button>
+    <button class="control-btn" onclick="nextVoice()">التالي ❯</button>
+  </div>
+
+  <audio id="globalAudio"></audio>
+
+  <script>
+    const tg = window.Telegram ? window.Telegram.WebApp : null;
+    if (tg) { tg.expand(); tg.ready(); }
+
+    let voices = [];
+    let currentIndex = 0;
+
+    async function loadVoices() {
+      try {
+        const res = await fetch('https://api.elevenlabs.io/v1/voices');
+        const data = await res.json();
+        voices = data.voices || [];
+        document.getElementById('loading').style.display = 'none';
+        renderVoices(voices);
+      } catch (e) {
+        document.getElementById('loading').innerText = '❌ تعذر تحميل الأصوات.';
+      }
+    }
+
+    function renderVoices(items) {
+      const container = document.getElementById('voicesContainer');
+      container.innerHTML = '';
+      items.forEach((v, idx) => {
+        const div = document.createElement('div');
+        div.className = 'voice-item';
+        div.innerHTML = `
+          <span class="voice-name">${v.name}</span>
+          <button class="btn-select" onclick="chooseVoice('${v.voice_id}', '${v.name}', ${idx})">اعتماد</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function playCurrentPreview() {
+      if (voices.length === 0) return;
+      const v = voices[currentIndex];
+      if (v && v.preview_url) {
+        const audio = document.getElementById('globalAudio');
+        audio.src = v.preview_url;
+        audio.play();
+      }
+    }
+
+    function prevVoice() {
+      if (currentIndex > 0) { currentIndex--; playCurrentPreview(); }
+    }
+
+    function nextVoice() {
+      if (currentIndex < voices.length - 1) { currentIndex++; playCurrentPreview(); }
+    }
+
+    function chooseVoice(id, name, idx) {
+      currentIndex = idx;
+      if (tg && tg.sendData) {
+        tg.sendData(JSON.stringify({ voice_id: id, voice_name: name }));
+        tg.close();
+      }
+    }
+
+    function filterVoices() {
+      const q = document.getElementById('search').value.toLowerCase();
+      const filtered = voices.filter(v => v.name.toLowerCase().includes(q));
+      renderVoices(filtered);
+    }
+
+    loadVoices();
+  </script>
+</body>
+</html>
