@@ -1,0 +1,18 @@
+{
+  "name": "voice-webapp-server",
+  "version": "1.0.0",
+  "description": "Proxy server for ElevenLabs voices for Telegram WebApp (voice-webapp)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "NODE_ENV=development node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  }
+}
