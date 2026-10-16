@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1020">
+  <title>مكتبة أصوات ElevenLabs</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --panel: #131c30;
+      --card: #172238;
+      --border: #293852;
+      --accent: #65d5ff;
+      --green: #20c997;
+      --muted: #94a3b8;
+      --text: #f1f5f9;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 16px 13px calc(28px + env(safe-area-inset-bottom));
+      background:
+        radial-gradient(ellipse at top, #182c4b 0, transparent 55%),
+        var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+    }
+
+    .app { max-width: 760px; margin: auto; }
+
+    .hero {
+      text-align: center;
+      padding: 20px 10px 17px;
+    }
+
+    .logo {
+      width: 62px;
+      height: 62px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 12px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #1d8bce, #7957e8);
+      font-size: 30px;
+      box-shadow: 0 8px 32px #247de733;
+    }
+
+    h1 { font-size: 22px; margin: 0 0 7px; }
+    .subtitle { color: var(--muted); font-size: 13px; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin: 8px 0 17px;
+    }
+
+    .stat {
+      background: #151f33;
+      border: 1px solid var(--border);
+      padding: 13px;
+      border-radius: 15px;
+    }
+
+    .stat strong { display: block; font-size: 22px; color: var(--accent); }
+    .stat span { font-size: 12px; color: var(--muted); }
+
+    .search-wrap { position: relative; margin-bottom: 12px; }
+
+    .search {
+      width: 100%;
+      padding: 15px 43px 15px 13px;
+      background: var(--panel);
+      color: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      font-size: 15px;
+      outline: none;
+    }
+
+    .search:focus { border-color: var(--accent); }
+    .search-icon { position: absolute; right: 15px; top: 14px; }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 2px 0 13px;
+      scrollbar-width: none;
+    }
+
+    .filter {
+      flex: 0 0 auto;
+      padding: 9px 13px;
+      color: #bdc9db;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .filter.active {
+      background: #153a51;
+      color: var(--accent);
+      border-color: #267eaa;
+    }
+
+    .list-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 8px 2px 12px;
+      font-size: 13px;
+    }
+
+    #result-count { color: var(--muted); }
+
+    .voice-list { display: grid; gap: 11px; }
+
+    .voice-card {
+      background: linear-gradient(145deg, #18253b, #111b2e);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .voice-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+    }
+
+    .avatar {
+      flex: 0 0 43px;
+      width: 43px;
+      height: 43px;
+      display: grid;
+      place-items: center;
+      border-radius: 13px;
+      background: #253955;
+      font-size: 21px;
+    }
+
+    .voice-info { flex: 1; min-width: 0; }
+    .voice-name { font-size: 15px; font-weight: 750; overflow-wrap: anywhere; }
+    .voice-desc {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
+
+    .tag {
+      border-radius: 7px;
+      padding: 4px 7px;
+      font-size: 10px;
+      background: #26354c;
+      color: #c1d3e9;
+    }
+
+    .tag.source { color: var(--accent); background: #12384a; }
+
+    .actions { display: flex; gap: 9px; margin-top: 13px; }
+
+    button { font-family: inherit; }
+
+    .btn {
+      flex: 1;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 11px 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn:disabled { opacity: .5; cursor: wait; }
+
+    .listen {
+      color: var(--accent);
+      background: #26364e;
+      border-color: #354b66;
+    }
+
+    .choose { color: #06251d; background: var(--green); }
+    .stop { color: #fecaca; background: #49252d; }
+
+    audio { width: 100%; margin-top: 12px; }
+
+    .message {
+      text-align: center;
+      padding: 30px 15px;
+      color: var(--muted);
+      background: var(--panel);
+      border: 1px dashed var(--border);
+      border-radius: 15px;
+      line-height: 1.9;
+    }
+
+    .load-more {
+      width: 100%;
+      margin-top: 14px;
+      padding: 14px;
+      color: var(--accent);
+      background: #172940;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .load-more:disabled { opacity: .5; }
+
+    .footer {
+      color: #64748b;
+      text-align: center;
+      font-size: 11px;
+      margin-top: 20px;
+      line-height: 1.8;
+    }
+
+    @media (min-width: 560px) {
+      .voice-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+
+<body>
+<main class="app">
+  <header class="hero">
+    <div class="logo">🎙️</div>
+    <h1>مكتبة الأصوات الشاملة</h1>
+    <div class="subtitle">اكتشف الصوت المناسب لمشروعك واستمع إليه قبل الاختيار</div>
+  </header>
+
+  <section class="stats">
+    <div class="stat">
+      <strong id="total">0</strong>
+      <span>صوت تم تحميله</span>
+    </div>
+    <div class="stat">
+      <strong id="available">—</strong>
+      <span>نتائج البحث الحالية</span>
+    </div>
+  </section>
+
+  <div class="search-wrap">
+    <span class="search-icon">🔎</span>
+    <input id="search" class="search" type="search"
+      placeholder="ابحث بالاسم أو الوصف أو اللغة..."
+      autocomplete="off">
+  </div>
+
+  <nav class="filters" aria-label="تصنيف الأصوات">
+    <button class="filter active" data-filter="all">🌐 الكل</button>
+    <button class="filter" data-filter="personal">👤 أصوات حسابي</button>
+    <button class="filter" data-filter="community">🌍 المكتبة العامة</button>
+    <button class="filter" data-filter="default">⭐ الأصوات الافتراضية</button>
+  </nav>
+
+  <div class="list-heading">
+    <strong>🎧 قائمة الأصوات</strong>
+    <span id="result-count">جاري التحميل...</span>
+  </div>
+
+  <div id="status" class="message">⏳ جارٍ جلب الأصوات من الخادم...</div>
+  <section id="voices-list" class="voice-list"></section>
+
+  <button id="load-more" class="load-more" hidden>تحميل المزيد من الأصوات ⬇️</button>
+
+  <footer class="footer">
+    مكتبة أصوات ElevenLabs · قد يختلف توفر الأصوات حسب حسابك وصلاحيات الاستخدام.
+  </footer>
+</main>
+
+<script>
+  const tg = window.Telegram?.WebApp;
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    tg.setHeaderColor?.("#0b1020");
+    tg.setBackgroundColor?.("#0b1020");
+  }
+
+  /*
+    هذه المسارات يجب أن يوفرها خادم البوت:
+    GET /api/voices?cursor=...
+    GET /api/shared-voices?page=...
+  */
+
+  const API = {
+    voices: "/api/voices",
+    shared: "/api/shared-voices"
+  };
+
+  const state = {
+    voices: new Map(),
+    cursors: { account: null, shared: 0 },
+    more: { account: true, shared: true },
+    loading: false,
+    filter: "all",
+    query: "",
+    errors: []
+  };
+
+  const $ = id => document.getElementById(id);
+
+  function safeText(value) {
+    return String(value ?? "");
+  }
+
+  function normalize(v, source) {
+    return {
+      id: safeText(v.voice_id),
+      name: safeText(v.name || "صوت بدون اسم"),
+      description: safeText(v.description || v.labels?.description || ""),
+      category: safeText(v.category || "عام"),
+      language: safeText(v.language || v.labels?.language || ""),
+      gender: safeText(v.gender || v.labels?.gender || ""),
+      preview: safeText(v.preview_url || ""),
+      source,
+      raw: v
+    };
+  }
+
+  async function getJSON(url) {
+    const response = await fetch(url, {
+      headers: { "Accept": "application/json" }
+    });
+
+    if (!response.ok) {
+      throw new Error("خطأ HTTP " + response.status);
+    }
+
+    return response.json();
+  }
+
+  async function loadAccountVoices() {
+    if (!state.more.account) return;
+
+    const params = new URLSearchParams({ page_size: "100" });
+    if (state.cursors.account) {
+      params.set("cursor", state.cursors.account);
+    }
+
+    const data = await getJSON(`${API.voices}?${params}`);
+    const voices = data.voices || [];
+
+    voices.forEach(v => {
+      const voice = normalize(v, "account");
+      if (voice.id) state.voices.set(voice.id, voice);
+    });
+
+    state.more.account = Boolean(data.has_more && data.next_page_token);
+    state.cursors.account = data.next_page_token || null;
+  }
+
+  async function loadSharedVoices() {
+    if (!state.more.shared) return;
+
+    const params = new URLSearchParams({
+      page_size: "100",
+      page: String(state.cursors.shared)
+    });
+
+    const data = await getJSON(`${API.shared}?${params}`);
+    const voices = data.voices || data.shared_voices || [];
+
+    voices.forEach(v => {
+      const voice = normalize(v, "shared");
+      if (voice.id && !state.voices.has(voice.id)) {
+        state.voices.set(voice.id, voice);
+      }
+    });
+
+    state.more.shared = Boolean(data.has_more);
+    state.cursors.shared += 1;
+  }
+
+  function visibleVoices() {
+    const q = state.query.toLocaleLowerCase();
+
+    return [...state.voices.values()].filter(v => {
+      const text = [
+        v.name, v.description, v.category, v.language, v.gender
+      ].join(" ").toLocaleLowerCase();
+
+      const matchesQuery = text.includes(q);
+      const matchesFilter =
+        state.filter === "all" ||
+        (state.filter === "personal" &&
+          v.source === "account" && v.raw.category !== "default") ||
+        (state.filter === "community" && v.source === "shared") ||
+        (state.filter === "default" && v.raw.category === "default");
+
+      return matchesQuery && matchesFilter;
+    });
+  }
+
+  function render() {
+    const list = $("voices-list");
+    const voices = visibleVoices();
+
+    $("total").textContent = state.voices.size.toLocaleString("ar");
+    $("available").textContent = voices.length.toLocaleString("ar");
+    $("result-count").textContent = `${voices.length} نتيجة`;
+
+    list.replaceChildren();
+
+    if (!voices.length) {
+      const empty = document.createElement("div");
+      empty.className = "message";
+      empty.textContent = state.loading
+        ? "⏳ جارٍ تحميل الأصوات..."
+        : "لا توجد نتائج مطابقة. جرّب البحث باسم آخر.";
+      list.appendChild(empty);
+    }
+
+    for (const v of voices) {
+      const card = document.createElement("article");
+      card.className = "voice-card";
+
+      const top = document.createElement("div");
+      top.className = "voice-top";
+
+      const avatar = document.createElement("div");
+      avatar.className = "avatar";
+      avatar.textContent = v.gender.toLowerCase().includes("female") ||
+        v.gender.toLowerCase().includes("أنث") ? "👩" : "🎙️";
+
+      const info = document.createElement("div");
+      info.className = "voice-info";
+
+      const name = document.createElement("div");
+      name.className = "voice-name";
+      name.textContent = v.name;
+
+      const desc = document.createElement("div");
+      desc.className = "voice-desc";
+      desc.textContent = v.description || "لا يوجد وصف لهذا الصوت.";
+
+      const tags = document.createElement("div");
+      tags.className = "tags";
+
+      [v.category, v.language || "لغة غير محددة",
+        v.source === "shared" ? "مكتبة عامة" : "حسابك"].forEach((label, i) => {
+        const tag = document.createElement("span");
+        tag.className = "tag" + (i === 2 ? " source" : "");
+        tag.textContent = label;
+        tags.appendChild(tag);
+      });
+
+      info.append(name, desc, tags);
+      top.append(avatar, info);
+
+      const actions = document.createElement("div");
+      actions.className = "actions";
+
+      if (v.preview) {
+        const listen = document.createElement("button");
+        listen.className = "btn listen";
+        listen.textContent = "▶ استماع";
+
+        listen.addEventListener("click", () => {
+          let audio = card.querySelector("audio");
+
+          document.querySelectorAll("#voices-list audio").forEach(a => {
+            if (a !== audio) {
+              a.pause();
+              a.currentTime = 0;
+              const b = a.closest(".voice-card")?.querySelector(".listen");
+              if (b) b.textContent = "▶ استماع";
+            }
+          });
+
+          if (!audio) {
+            audio = document.createElement("audio");
+            audio.controls = true;
+            audio.preload = "none";
+            audio.src = v.preview;
+            card.appendChild(audio);
+          }
+
+          if (audio.paused) {
+            audio.play().then(() => {
+              listen.textContent = "⏸ إيقاف";
+            }).catch(() => {
+              listen.textContent = "▶ إعادة المحاولة";
+            });
+          } else {
+            audio.pause();
+            listen.textContent = "▶ استماع";
+          }
+
+          audio.onended = () => listen.textContent = "▶ استماع";
+        });
+
+        actions.appendChild(listen);
+      }
+
+      const select = document.createElement("button");
+      select.className = "btn choose";
+      select.textContent = "✓ اختيار الصوت";
+
+      select.addEventListener("click", () => {
+        const payload = {
+          action: "select_voice",
+          voice_id: v.id,
+          voice_name: v.name,
+          source: v.source
+        };
+
+        if (tg && typeof tg.sendData === "function") {
+          tg.sendData(JSON.stringify(payload));
+          tg.close();
+        } else {
+          // وضع الاختبار خارج تيليجرام
+          if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(v.id).then(() => {
+              alert("تم نسخ معرّف الصوت: " + v.id);
+            }).catch(() => {
+              alert("معرّف الصوت: " + v.id);
+            });
+          } else {
+            alert("معرّف الصوت: " + v.id);
+          }
+        }
+      });
+
+      actions.appendChild(select);
+      card.append(top, actions);
+      list.appendChild(card);
+    }
+
+    $("load-more").hidden =
+      !state.more.account && !state.more.shared;
+
+    $("load-more").disabled = state.loading;
+    $("load-more").textContent = state.loading
+      ? "⏳ جارٍ التحميل..."
+      : "تحميل المزيد من الأصوات ⬇️";
+  }
+
+  async function loadNextPage() {
+    if (state.loading) return;
+
+    state.loading = true;
+    $("status").hidden = false;
+    $("status").textContent = "⏳ جارٍ جلب المزيد من الأصوات...";
+    render();
+
+    const jobs = [];
+
+    if (state.more.account) {
+      jobs.push(loadAccountVoices().catch(e => {
+        state.more.account = false;
+        state.errors.push("أصوات الحساب: " + e.message);
+      }));
+    }
+
+    if (state.more.shared) {
+      jobs.push(loadSharedVoices().catch(e => {
+        state.more.shared = false;
+        state.errors.push("الأصوات العامة: " + e.message);
+      }));
+    }
+
+    await Promise.all(jobs);
+
+    state.loading = false;
+    $("status").hidden = true;
+
+    if (state.errors.length) {
+      $("status").hidden = false;
+      $("status").textContent =
+        "⚠️ تعذّر تحميل بعض المصادر. تحقق من إعداد الخادم والصلاحيات.";
+    }
+
+    render();
+  }
+
+  $("search").addEventListener("input", e => {
+    state.query = e.target.value.trim();
+    render();
+  });
+
+  document.querySelectorAll(".filter").forEach(button => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll(".filter").forEach(b =>
+        b.classList.toggle("active", b === button)
+      );
+      state.filter = button.dataset.filter;
+      render();
+    });
+  });
+
+  $("load-more").addEventListener("click", loadNextPage);
+
+  loadNextPage();
+</script>
+</body>
+</html>
