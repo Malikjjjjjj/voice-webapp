@@ -6,6 +6,8 @@ import express from "express";
 import axios from "axios";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 app.use(cors());
@@ -14,6 +16,15 @@ app.use(express.json());
 // basic rate-limiter to protect API key abuse
 const limiter = rateLimit({ windowMs: 10 * 1000, max: 60 });
 app.use(limiter);
+
+// ESM __dirname shim
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const publicPath = path.join(__dirname, "public");
+
+// Serve static files from public and ensure root returns index.html
+app.use(express.static(publicPath));
+app.get("/", (req, res) => res.sendFile(path.join(publicPath, "index.html")));
 
 const ELEVEN_KEY = process.env.ELEVENLABS_API_KEY;
 if (!ELEVEN_KEY) console.warn("ELEVENLABS_API_KEY not set — proxy requests will fail.");
