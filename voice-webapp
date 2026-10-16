@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Voice Webapp</title>
+  <style>
+    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding: 2rem; direction: rtl; }
+    .container { max-width: 800px; margin: 0 auto; }
+    button { padding: 0.6rem 1rem; font-size: 1rem; }
+    .log { margin-top: 1rem; background:#f6f6f6; padding:1rem; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Voice Webapp (تجريبي)</h1>
+    <p>هذه صفحة تجريبية لمشروع "voice-webapp". إذا أردت إدماجها كتطبيق ويب داخل تيليجرام، أحتاج إلى رابط HTTPS مستضاف وإعدادات البوت.</p>
+
+    <p>اضغط على ال��ر لتشغيل التسجيل الصوتي (إذا دعم المتصفح):</p>
+    <button id="startBtn">ابدأ التسجيل الصوتي</button>
+    <div class="log" id="log">لا يوجد تسجيلات بعد.</div>
+  </div>
+
+  <script>
+    const logEl = document.getElementById('log');
+    const btn = document.getElementById('startBtn');
+
+    function log(msg){
+      logEl.textContent = msg;
+    }
+
+    // بسيط: تسجيـل صوتي ثم تشغيله
+    btn.addEventListener('click', async ()=>{
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        log('المتصفح لا يدعم واجهة التسجيل الصوتي.');
+        return;
+      }
+      try{
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+        mediaRecorder.onstop = ()=>{
+          const blob = new Blob(chunks, { type: 'audio/webm' });
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          audio.controls = true;
+          logEl.innerHTML = '';
+          logEl.appendChild(audio);
+          audio.play();
+        };
+        mediaRecorder.start();
+        log('التسجيل قيد التشغيل... سيتوقف بعد 3 ثواني');
+        setTimeout(()=>{
+          mediaRecorder.stop();
+          stream.getTracks().forEach(t=>t.stop());
+          log('تم إيقاف التسجيل. يتم تشغيل الصوت الآن...');
+        }, 3000);
+      }catch(err){
+        console.error(err);
+        log('خطأ أثناء محاولة الوصول إلى الميكروفون: ' + err.message);
+      }
+    });
+
+    // تذكير: إذا أردت تكامل تيليجرام ويب آب
+    // أضف هنا كود Telegram.WebApp بعد استضافة الصفحة وإدخال رابطها في إعدادات البوت
+  </script>
+</body>
+</html>
